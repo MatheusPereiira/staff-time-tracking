@@ -7,12 +7,15 @@ class PunchController:
         self.model = PunchModel()
 
     def register(self, employee_id, punch_type):
-        punches = self.model.by_employee(employee_id)
+        punches = self.model.all()
 
-        last = punches[-1] if punches else None
+        last = None
+        if punches:
+            last = punches[-1]
 
-        if last and last["type"] == punch_type:
-            raise ValueError("Esse ponto já foi registrado.")
+        if last and last["employee_id"] == employee_id:
+            if last["type"] == punch_type:
+                raise ValueError("Esse ponto já foi registrado.")
 
         punch = {
             "employee_id": employee_id,
@@ -23,31 +26,26 @@ class PunchController:
         self.model.add(punch)
 
     def list_by_employee(self, employee_id):
-        return self.model.by_employee(employee_id)
+        return [
+            p for p in self.model.all()
+            if p["employee_id"] == employee_id
+        ]
 
-    #FILTRO DE PONTOS
-    def filter_punches(
-        self,
-        employee_id,
-        punch_type=None,
-        start_date=None,
-        end_date=None
-    ):
-        punches = self.model.by_employee(employee_id)
+    def list_filtered(self, employee_id, start_date, end_date, punch_type=None):
         result = []
 
-        for p in punches:
-            punch_date = datetime.fromisoformat(p["timestamp"])
+        for p in self.model.all():
+            if p["employee_id"] != employee_id:
+                continue
+
+            date = datetime.fromisoformat(p["timestamp"]).date()
+
+            if not (start_date <= date <= end_date):
+                continue
 
             if punch_type and punch_type != "todos":
                 if p["type"] != punch_type:
                     continue
-
-            if start_date and punch_date.date() < start_date:
-                continue
-
-            if end_date and punch_date.date() > end_date:
-                continue
 
             result.append(p)
 
