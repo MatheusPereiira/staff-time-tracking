@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QTableWidget, QTableWidgetItem,
-    QHeaderView
+    QHeaderView, QMessageBox
 )
 from PyQt6.QtCore import Qt
 
@@ -50,7 +50,7 @@ class AdminDashboard(QWidget):
 
         main_layout.addLayout(cards_layout)
 
-        # AÇÕES
+        # AÇÕES GERAIS
         actions_layout = QHBoxLayout()
         actions_layout.addStretch()
 
@@ -62,8 +62,26 @@ class AdminDashboard(QWidget):
 
         actions_layout.addWidget(btn_reports)
         actions_layout.addWidget(btn_refresh)
-
         main_layout.addLayout(actions_layout)
+
+        # AÇÕES DA TABELA
+        table_actions = QHBoxLayout()
+
+        btn_new = QPushButton("Novo")
+        btn_new.clicked.connect(self.add_employee)
+
+        btn_edit = QPushButton("Editar")
+        btn_edit.clicked.connect(self.edit_employee)
+
+        btn_delete = QPushButton("Excluir")
+        btn_delete.clicked.connect(self.delete_employee)
+
+        table_actions.addWidget(btn_new)
+        table_actions.addWidget(btn_edit)
+        table_actions.addWidget(btn_delete)
+        table_actions.addStretch()
+
+        main_layout.addLayout(table_actions)
 
         # TABELA
         self.table = QTableWidget()
@@ -85,7 +103,7 @@ class AdminDashboard(QWidget):
 
         main_layout.addWidget(self.table)
 
-    #  COMPONENTES 
+    # COMPONENTES 
 
     def create_card(self, title_text):
         card = QWidget()
@@ -125,7 +143,7 @@ class AdminDashboard(QWidget):
         card.value_label = value
         return card
 
-    #  DADOS 
+    # DADOS 
 
     def load_data(self):
         employees = self.employee_controller.all()
@@ -133,14 +151,9 @@ class AdminDashboard(QWidget):
 
         total_employees = len(employees)
         total_hours = sum(item["hours"] for item in summary)
-        avg_hours = (
-            total_hours / total_employees
-            if total_employees > 0 else 0
-        )
+        avg_hours = total_hours / total_employees if total_employees else 0
 
-        highlight = max(
-            summary, key=lambda x: x["hours"], default=None
-        )
+        highlight = max(summary, key=lambda x: x["hours"], default=None)
 
         self.card_employees.value_label.setText(str(total_employees))
         self.card_total_hours.value_label.setText(f"{total_hours:.1f} h")
@@ -154,7 +167,6 @@ class AdminDashboard(QWidget):
             self.card_highlight.value_label.setText("-")
 
         self.table.setRowCount(len(employees))
-
         for row, emp in enumerate(employees):
             self.table.setItem(row, 0, QTableWidgetItem(emp["name"]))
             self.table.setItem(row, 1, QTableWidgetItem(emp["role"]))
@@ -165,3 +177,36 @@ class AdminDashboard(QWidget):
     def open_reports(self):
         self.reports_window = AdminReportsView()
         self.reports_window.show()
+
+    def add_employee(self):
+        QMessageBox.information(
+            self, "Novo Funcionário",
+            "Aqui você pode abrir um formulário para cadastrar funcionário."
+        )
+
+    def edit_employee(self):
+        row = self.table.currentRow()
+        if row < 0:
+            QMessageBox.warning(self, "Atenção", "Selecione um funcionário.")
+            return
+        QMessageBox.information(
+            self, "Editar Funcionário",
+            "Aqui você pode editar o funcionário selecionado."
+        )
+
+    def delete_employee(self):
+        row = self.table.currentRow()
+        if row < 0:
+            QMessageBox.warning(self, "Atenção", "Selecione um funcionário.")
+            return
+
+        confirm = QMessageBox.question(
+            self,
+            "Confirmar Exclusão",
+            "Deseja realmente excluir este funcionário?"
+        )
+
+        if confirm == QMessageBox.StandardButton.Yes:
+            QMessageBox.information(
+                self, "Excluído", "Funcionário removido com sucesso."
+            )
