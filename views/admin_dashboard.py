@@ -25,18 +25,18 @@ class AdminDashboard(QWidget):
         self.init_ui()
         self.load_data()
 
-    #UI 
+    #UI
     def init_ui(self):
         main_layout = QVBoxLayout(self)
         main_layout.setSpacing(20)
         main_layout.setContentsMargins(24, 24, 24, 24)
 
-        # TÍTULO
+        #TÍTULO
         title = QLabel("Dashboard Administrativo")
         title.setObjectName("DashboardTitle")
         main_layout.addWidget(title)
 
-        # CARDS
+        #CARDS
         cards_layout = QHBoxLayout()
         cards_layout.setSpacing(20)
 
@@ -52,7 +52,7 @@ class AdminDashboard(QWidget):
 
         main_layout.addLayout(cards_layout)
 
-        # AÇÕES GERAIS
+        #AÇÕES GERAIS
         actions_layout = QHBoxLayout()
         actions_layout.addStretch()
 
@@ -67,7 +67,7 @@ class AdminDashboard(QWidget):
 
         main_layout.addLayout(actions_layout)
 
-        # 🔍 FILTROS
+        #FILTROS
         filter_layout = QHBoxLayout()
 
         self.search_name = QLineEdit()
@@ -89,7 +89,7 @@ class AdminDashboard(QWidget):
 
         main_layout.addLayout(filter_layout)
 
-        # AÇÕES DA TABELA
+        #AÇÕES DA TABELA
         table_actions = QHBoxLayout()
 
         btn_new = QPushButton("Novo")
@@ -101,9 +101,19 @@ class AdminDashboard(QWidget):
         btn_delete = QPushButton("Excluir")
         btn_delete.clicked.connect(self.delete_employee)
 
+        #ORDENAÇÃO
+        btn_sort_az = QPushButton("Ordenar A–Z")
+        btn_sort_az.clicked.connect(self.sort_az)
+
+        btn_sort_za = QPushButton("Ordenar Z–A")
+        btn_sort_za.clicked.connect(self.sort_za)
+
         table_actions.addWidget(btn_new)
         table_actions.addWidget(btn_edit)
         table_actions.addWidget(btn_delete)
+        table_actions.addSpacing(16)
+        table_actions.addWidget(btn_sort_az)
+        table_actions.addWidget(btn_sort_za)
         table_actions.addStretch()
 
         main_layout.addLayout(table_actions)
@@ -129,7 +139,6 @@ class AdminDashboard(QWidget):
         main_layout.addWidget(self.table)
 
     #COMPONENTES
-
     def create_card(self, title_text):
         card = QWidget()
         card.setObjectName("Card")
@@ -168,8 +177,7 @@ class AdminDashboard(QWidget):
         card.value_label = value
         return card
 
-    #DADOS 
-
+    # DADOS
     def load_data(self):
         self.employees = self.employee_controller.all()
         summary = self.report_controller.admin_summary()
@@ -201,7 +209,6 @@ class AdminDashboard(QWidget):
             self.table.setItem(row, 2, QTableWidgetItem(emp["department"]))
 
     #FILTRO
-
     def filter_employees(self):
         name_filter = self.search_name.text().lower()
         role_filter = self.search_role.text().lower()
@@ -216,8 +223,16 @@ class AdminDashboard(QWidget):
 
         self.populate_table(filtered)
 
-    #AÇÕES
+    #ORDENAÇÃO
+    def sort_az(self):
+        self.employees.sort(key=lambda e: e["name"].lower())
+        self.filter_employees()
 
+    def sort_za(self):
+        self.employees.sort(key=lambda e: e["name"].lower(), reverse=True)
+        self.filter_employees()
+
+    #AÇÕES
     def open_reports(self):
         self.reports_window = AdminReportsView()
         self.reports_window.show()
