@@ -1,7 +1,8 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QPushButton,
-    QLabel, QMessageBox
+    QWidget, QVBoxLayout, QHBoxLayout,
+    QPushButton, QLabel, QMessageBox
 )
+from PyQt6.QtCore import Qt
 
 from controllers.punch_controller import PunchController
 from views.reports_view import ReportsView
@@ -14,34 +15,68 @@ class EmployeeDashboard(QWidget):
         self.employee = employee
         self.controller = PunchController()
 
-        self.setWindowTitle("Registro de Ponto")
-        self.setFixedSize(400, 420)
+        self.setWindowTitle("Painel do Funcionário")
+        self.setFixedSize(420, 520)
 
-        layout = QVBoxLayout(self)
+        self.init_ui()
 
-        label_employee = QLabel(f"Funcionário: {employee['name']}")
-        label_user = QLabel(f"Usuário: {employee['user_username']}")
+    def init_ui(self):
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(24, 24, 24, 24)
 
-        layout.addWidget(label_employee)
-        layout.addWidget(label_user)
+        # ===== TÍTULO =====
+        title = QLabel("Registro de Ponto")
+        title.setObjectName("DashboardTitle")
+        main_layout.addWidget(title)
+
+        #CARD FUNCIONÁRIO
+        card = QWidget()
+        card.setObjectName("Card")
+
+        card_layout = QVBoxLayout(card)
+        card_layout.setSpacing(6)
+
+        label_name = QLabel(f"Funcionário: {self.employee['name']}")
+        label_user = QLabel(f"Usuário: {self.employee['user_username']}")
+
+        label_name.setStyleSheet("font-weight: 600;")
+        label_user.setStyleSheet("color: #475569;")
+
+        card_layout.addWidget(label_name)
+        card_layout.addWidget(label_user)
+
+        main_layout.addWidget(card)
+
+        #BOTÕES DE PONTO
+        buttons_layout = QVBoxLayout()
+        buttons_layout.setSpacing(12)
 
         btn_entry = QPushButton("Entrada")
         btn_break = QPushButton("Intervalo")
         btn_return = QPushButton("Retorno")
         btn_exit = QPushButton("Saída")
-        btn_report = QPushButton("Relatório de Horas")
 
         btn_entry.clicked.connect(lambda: self.register("entrada"))
         btn_break.clicked.connect(lambda: self.register("intervalo"))
         btn_return.clicked.connect(lambda: self.register("retorno"))
         btn_exit.clicked.connect(lambda: self.register("saida"))
+
+        buttons_layout.addWidget(btn_entry)
+        buttons_layout.addWidget(btn_break)
+        buttons_layout.addWidget(btn_return)
+        buttons_layout.addWidget(btn_exit)
+
+        main_layout.addLayout(buttons_layout)
+
+        #RELATÓRIO 
+        btn_report = QPushButton("Relatório de Horas")
         btn_report.clicked.connect(self.open_report)
 
-        layout.addWidget(btn_entry)
-        layout.addWidget(btn_break)
-        layout.addWidget(btn_return)
-        layout.addWidget(btn_exit)
-        layout.addWidget(btn_report)
+        main_layout.addStretch()
+        main_layout.addWidget(btn_report)
+
+    #AÇÕES
 
     def register(self, punch_type):
         try:
