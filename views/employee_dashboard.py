@@ -1,8 +1,9 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QMessageBox
+    QWidget, QVBoxLayout, QPushButton,
+    QLabel, QMessageBox
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QTimer, QTime, Qt 
+from datetime import datetime
 
 from controllers.punch_controller import PunchController
 from views.reports_view import ReportsView
@@ -15,68 +16,92 @@ class EmployeeDashboard(QWidget):
         self.employee = employee
         self.controller = PunchController()
 
-        self.setWindowTitle("Painel do Funcionário")
-        self.setFixedSize(420, 520)
+        self.setWindowTitle("Registro de Ponto")
+        self.setFixedSize(400, 460)
+
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_clock)
+
+        self.work_timer = QTimer(self)
+        self.work_timer.timeout.connect(self.update_work_time)
+
+        self.seconds_worked = 0
+        self.is_working = False
 
         self.init_ui()
+        self.timer.start(1000)
+
+    #UI
 
     def init_ui(self):
-        main_layout = QVBoxLayout(self)
-        main_layout.setSpacing(20)
-        main_layout.setContentsMargins(24, 24, 24, 24)
+        layout = QVBoxLayout()
+        layout.setSpacing(12)
 
-        # ===== TÍTULO =====
-        title = QLabel("Registro de Ponto")
-        title.setObjectName("DashboardTitle")
-        main_layout.addWidget(title)
+        # INFO FUNCIONÁRIO
+        self.label_employee = QLabel(f"Funcionário: {self.employee['name']}")
+        self.label_user = QLabel(f"Usuário: {self.employee['user_username']}")
 
-        #CARD FUNCIONÁRIO
-        card = QWidget()
-        card.setObjectName("Card")
+        self.label_employee.setStyleSheet("font-weight:600;")
+        self.label_user.setStyleSheet("color:#475569;")
 
-        card_layout = QVBoxLayout(card)
-        card_layout.setSpacing(6)
+        layout.addWidget(self.label_employee)
+        layout.addWidget(self.label_user)
 
-        label_name = QLabel(f"Funcionário: {self.employee['name']}")
-        label_user = QLabel(f"Usuário: {self.employee['user_username']}")
+        # RELÓGIO ATUAL
+        self.clock_label = QLabel("--:--:--")
+        self.clock_label.setStyleSheet("""
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+        """)
+        self.clock_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        label_name.setStyleSheet("font-weight: 600;")
-        label_user.setStyleSheet("color: #475569;")
+        layout.addWidget(self.clock_label)
 
-        card_layout.addWidget(label_name)
-        card_layout.addWidget(label_user)
+        # CONTADOR DE HORAS
+        self.work_label = QLabel("Tempo trabalhado: 00:00:00")
+        self.work_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.work_label.setStyleSheet("font-size:16px;")
 
-        main_layout.addWidget(card)
+        layout.addWidget(self.work_label)
 
-        #BOTÕES DE PONTO
-        buttons_layout = QVBoxLayout()
-        buttons_layout.setSpacing(12)
-
+        # BOTÕES
         btn_entry = QPushButton("Entrada")
         btn_break = QPushButton("Intervalo")
         btn_return = QPushButton("Retorno")
         btn_exit = QPushButton("Saída")
+        btn_report = QPushButton("Relatório de Horas")
 
         btn_entry.clicked.connect(lambda: self.register("entrada"))
         btn_break.clicked.connect(lambda: self.register("intervalo"))
         btn_return.clicked.connect(lambda: self.register("retorno"))
         btn_exit.clicked.connect(lambda: self.register("saida"))
-
-        buttons_layout.addWidget(btn_entry)
-        buttons_layout.addWidget(btn_break)
-        buttons_layout.addWidget(btn_return)
-        buttons_layout.addWidget(btn_exit)
-
-        main_layout.addLayout(buttons_layout)
-
-        #RELATÓRIO 
-        btn_report = QPushButton("Relatório de Horas")
         btn_report.clicked.connect(self.open_report)
 
-        main_layout.addStretch()
-        main_layout.addWidget(btn_report)
+        layout.addWidget(btn_entry)
+        layout.addWidget(btn_break)
+        layout.addWidget(btn_return)
+        layout.addWidget(btn_exit)
+        layout.addWidget(btn_report)
 
-    #AÇÕES
+        self.setLayout(layout)
+
+    #RELÓGIO
+
+    def update_clock(self):
+        now = QTime.currentTime()
+        self.clock_label.setText(now.toString("HH:mm:ss"))
+
+    def update_work_time(self):
+        self.seconds_worked += 1
+        h = self.seconds_worked // 3600
+        m = (self.seconds_worked % 3600) // 60
+        s = self.seconds_worked % 60
+        self.work_label.setText(
+            f"Tempo trabalhado: {h:02d}:{m:02d}:{s:02d}"
+        )
+
+    # PONTO
 
     def register(self, punch_type):
         try:
@@ -84,13 +109,40 @@ class EmployeeDashboard(QWidget):
                 employee_id=self.employee["id"],
                 punch_type=punch_type
             )
+
+            # CONTROLE DO TIMER
+            if punch_type == "entrada":
+                self.start_work_timer()
+
+            elif punch_type == "intervalo":
+                self.stop_work_timer()
+
+            elif punch_type == "retorno":
+                self.start_work_timer()
+
+            elif punch_type == "saida":
+                self.stop_work_timer()
+
             QMessageBox.information(
                 self,
                 "Sucesso",
                 f"Ponto registrado: {punch_type.capitalize()}"
             )
+
         except ValueError as e:
             QMessageBox.warning(self, "Erro", str(e))
+
+    def start_work_timer(self):
+        if not self.is_working:
+            self.is_working = True
+            self.work_timer.start(1000)
+
+    def stop_work_timer(self):
+        if self.is_working:
+            self.is_working = False
+            self.work_timer.stop()
+
+    #RELATÓRIO
 
     def open_report(self):
         self.report_window = ReportsView(self.employee)
