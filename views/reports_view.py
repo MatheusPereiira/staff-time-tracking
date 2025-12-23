@@ -26,7 +26,7 @@ class ReportsView(QWidget):
 
         layout.addWidget(QLabel(f"Funcionário: {employee['name']}"))
 
-        #FILTROS
+        # FILTROS
         filters = QHBoxLayout()
 
         self.type_filter = QComboBox()
@@ -51,14 +51,14 @@ class ReportsView(QWidget):
 
         layout.addLayout(filters)
 
-        #TABELA
+        # TABELA
         self.table = QTableWidget(0, 3)
         self.table.setHorizontalHeaderLabels(["Data", "Hora", "Tipo"])
         self.table.horizontalHeader().setStretchLastSection(True)
 
         layout.addWidget(self.table)
 
-        #EXPORTAÇÃO
+        # EXPORTAÇÃO
         export_layout = QHBoxLayout()
 
         btn_csv = QPushButton("Exportar CSV")
@@ -97,7 +97,6 @@ class ReportsView(QWidget):
             self.table.setItem(row, 1, QTableWidgetItem(dt.strftime("%H:%M:%S")))
             self.table.setItem(row, 2, QTableWidgetItem(p["type"].capitalize()))
 
-    # CSV
     def export_csv(self):
         path, _ = QFileDialog.getSaveFileName(
             self, "Salvar CSV", "", "CSV (*.csv)"
@@ -118,7 +117,6 @@ class ReportsView(QWidget):
                     p["type"]
                 ])
 
-    #PDF
     def export_pdf(self):
         path, _ = QFileDialog.getSaveFileName(
             self, "Salvar PDF", "", "PDF (*.pdf)"
@@ -151,5 +149,3 @@ class ReportsView(QWidget):
                 y = height - 50
 
         pdf.save()
-
-
